@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface Env {
+	RATE_LIMIT: KVNamespace;
 	GEMINI_API_KEY: string;
 }
 
@@ -10,6 +11,33 @@ const corsHeaders = {
 	'Access-Control-Allow-Headers': 'Content-Type',
 };
 
+const MAX_REQUESTS_ALLOWED = 10;
+const DURATION = 60_000;
+
+async function checkRateLimit(ip: string, env: Env) {
+	const key = `ip_key:${ip}`;
+	const now = Date.now();
+	let value = await env.RATE_LIMIT.get(key);
+	let data = { count: 0, time: now };
+
+	if (value) {
+		try {
+			data = JSON.parse(value);
+		} catch {
+			data = { count: 0, time: now };
+		}
+	}
+
+	if (now - data.time > DURATION) {
+		data.count = 0;
+		data.time = now;
+	}
+
+	data.count += 1;
+	await env.RATE_LIMIT.put(key, JSON.stringify(data), { expirationTtl: 65 });
+
+	return data.count <= MAX_REQUESTS_ALLOWED;
+}
 async function handleTranslate(request: Request, model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>) {
 	const { code, targetLanguage } = await request.json<{ code: string; targetLanguage: string }>();
 
@@ -73,11 +101,22 @@ export default {
 		}
 
 		try {
+			const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      		const allowed = await checkRateLimit(ip, env);
+      		if (!allowed) {
+        		return new Response(JSON.stringify({ error: "Too many requests. Try again later." }), {
+          		status: 429,
+          		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        	});
+      		}
 			const url = new URL(request.url);
 			const path = url.pathname;
 			const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 			const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
+			if(path==="/test-rate-limit"){
+				return new Response(JSON.stringify("Proceed !"))
+			}
 			if (path === '/' || path === '/v1/translate') {
 				return await handleTranslate(request, model);
 			}
