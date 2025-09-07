@@ -102,7 +102,7 @@ export default {
 
 		try {
 			const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-      		const allowed = await checkRateLimit(ip,env);
+      		const allowed = await checkRateLimit(ip, env);
       		if (!allowed) {
         		return new Response(JSON.stringify({ error: "Too many requests. Try again later." }), {
           		status: 429,
