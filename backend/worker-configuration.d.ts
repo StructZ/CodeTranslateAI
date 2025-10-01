@@ -3,6 +3,7 @@
 // Runtime types generated with workerd@1.20250712.0 2025-07-15 
 declare namespace Cloudflare {
 	interface Env {
+		RATE_LIMIT: KVNamespace;
 	}
 }
 interface Env extends Cloudflare.Env {}

@@ -5,10 +5,19 @@
   "author": "Dinesh Kumar Sutihar",
   "type": "module",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "format": "prettier --write .",
+    "check-format": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "**/*.{js,css,md,json}": "prettier --write"
   },
   "devDependencies": {
     "dotenv": "^17.2.1",
-    "esbuild": "^0.25.8"
+    "esbuild": "^0.25.8",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.4",
+    "prettier": "3.6.2"
   }
 }

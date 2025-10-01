@@ -1,16 +1,17 @@
-import esbuild from 'esbuild';
-import 'dotenv/config';
+import esbuild from "esbuild";
+import "dotenv/config";
 
-const define = {};
-for (const k in process.env) {
-    define[`process.env.${k}`] = JSON.stringify(process.env[k]);
-}
+const define = {
+  "process.env.BACKEND_URL": JSON.stringify(process.env.BACKEND_URL || ""),
+};
 
-esbuild.build({
-    entryPoints: ['scripts/content.js', 'background.js'],
+esbuild
+  .build({
+    entryPoints: ["scripts/content.js", "background.js"],
     bundle: true,
-    outdir: 'dist',
+    outdir: "dist",
     define: define,
-}).catch(() => process.exit(1));
+  })
+  .catch(() => process.exit(1));
 
-console.log('Build complete. Files are in the /dist folder.');
+console.log("Build complete. Files are in the /dist folder.");

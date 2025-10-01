@@ -35,8 +35,17 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["packages/prism.css"],
+      "resources": ["packages/prism.css","packages/prism-light.css"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "commands": {
+    "translate": {
+      "suggested_key": {
+        "default": "Alt+Shift+A",
+        "mac": "Alt+Shift+A"
+      },
+      "description": "Translate selected text"
+    }
+  }
 }

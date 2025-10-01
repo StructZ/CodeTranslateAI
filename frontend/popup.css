@@ -1,6 +1,7 @@
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --bg-color: #f7f7f8;
   --text-color: #2c2c2e;
   --subtle-text-color: #6a6a6e;
@@ -15,7 +16,7 @@ body.dark-mode {
   --text-color: #f2f2f7;
   --subtle-text-color: #98989d;
   --primary-color: #0a84ff;
-  --primary-hover-color: #389dff;
+  --primary-hover-color: #5e9edd;
   --container-bg-color: #2c2c2e;
   --border-color: #3a3a3c;
 }
@@ -27,7 +28,9 @@ body {
   width: 300px;
   padding: 16px;
   margin: 0;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .container {

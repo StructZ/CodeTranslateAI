@@ -1,0 +1,26 @@
+name: Welcome First-Time Contributors
+
+on:
+  pull_request_target:
+    types: [opened]
+  issues:
+    types: [opened]
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            Hello @${{ github.actor }}! 👋 
+            Thank you so much for taking the time to open your first issue with CodeTranslateAI. We appreciate you helping us make the project better! 
+            We'll take a look and get back to you soon.
+          pr-message: |
+            Hi @${{ github.actor }}! 🎉
+            Welcome, and thank you for submitting your first pull request to CodeTranslateAI! We're thrilled to have your contribution.
+            Please make sure you've read our CONTRIBUTING.md guide. We'll review your changes shortly.
