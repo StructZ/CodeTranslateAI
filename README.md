@@ -32,6 +32,17 @@
 
 See CodeTranslateAI work seamlessly on any webpage. Select code, and the translated version appears right beside it in a clean, tabbed interface with syntax highlighting.
 
+### 🎯 Key Features
+
+- ✅ **Real-time Code Translation** - Translate code snippets instantly with AI
+- ✅ **14+ Programming Languages** - Support for C, C++, C#, Java, Python, JavaScript, TypeScript, Go, Rust, Swift, Kotlin, PHP, Ruby, Visual Basic
+- ✅ **Syntax Highlighting** - Beautiful code display with Prism.js
+- ✅ **Dark/Light Mode** - Seamless theme switching
+- ✅ **Tabbed Interface** - View multiple translations in tabs
+- ✅ **One-Click Copy** - Copy translated code to clipboard
+- ✅ **👍👎 User Feedback** - Rate translation quality and help improve AI (NEW!)
+- ✅ **Cached Translations** - Faster loading with smart caching
+
 ## ![CodeTranslateAI in action](/promotional/Extension%2001.png)
 
 ## ![CodeTranslateAI in action](/promotional/Extension%2002.png)
@@ -112,6 +123,24 @@ You must have **Node.js** and **npm** installed on your machine.
     ```
 
     - After deployment, **copy the URL** that Wrangler provides.
+
+7.  **Set Up Feedback Storage (Optional)**
+
+    - For the user feedback feature, create a KV namespace to store feedback data:
+
+    <!-- end list -->
+
+    ```sh
+    npx wrangler kv:namespace create "FEEDBACK_STORE"
+    npx wrangler kv:namespace create "FEEDBACK_STORE" --preview
+    ```
+
+    - Update the KV namespace IDs in `wrangler.jsonc`:
+      - Replace `<your_feedback_kv_id>` with the production namespace ID
+      - Replace `<your_feedback_preview_kv_id>` with the preview namespace ID
+    - Redeploy the worker: `npx wrangler deploy`
+
+    For more details, see [FEEDBACK_FEATURE.md](FEEDBACK_FEATURE.md).
 
 ### 🖥️ Part 2: Frontend Setup (Chrome Extension)
 
@@ -206,6 +235,20 @@ The **CodeTranslateAI** icon should now appear in your Chrome toolbar\!
 3.  Click the **"Enable Code Selector"** button.
 4.  Your cursor will change to a crosshair. Click on any code block on a webpage.
 5.  A "Translating..." message will appear, followed by the translated code in a new UI.
+
+### 👍👎 Providing Feedback
+
+Help us improve translation quality by rating the AI-generated code:
+
+- Click **👍** if the translation is good
+- Click **👎** if the translation needs improvement
+  - A modal will appear asking what was wrong
+  - Optionally provide detailed feedback
+  - Your feedback helps us improve the AI prompts
+
+**All feedback is stored securely and used solely to enhance translation quality.**
+
+For more details about the feedback feature, see [FEEDBACK_FEATURE.md](FEEDBACK_FEATURE.md).
 
 ---
 
