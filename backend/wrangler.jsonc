@@ -14,6 +14,11 @@
 		{
 			"binding": "RATE_LIMIT",
 			"id": "<your_kv_id>"
+		},
+		{
+			"binding": "FEEDBACK_STORE",
+			"id": "<your_feedback_kv_id>",
+			"preview_id": "<your_feedback_preview_kv_id>"
 		}
 	]
 
