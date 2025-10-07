@@ -8,8 +8,12 @@ if (!tag) {
   process.exit(1);
 }
 
-// The version is the tag name without the 'v' prefix
-const version = tag.substring(1);
+const version = tag.startsWith('v') ? tag.substring(1) : tag;
+
+if (!/^\d+\.\d+\.\d+(-[\w.-]+)?$/.test(version)) {
+    console.error(`Invalid version format: "${version}". Expected semver like v1.2.3 or v1.2.3-beta.1`);
+    process.exit(1);
+}
 
 // Path to the manifest file
 const manifestPath = path.resolve(__dirname, '../../frontend/manifest.json');
