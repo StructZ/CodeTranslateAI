@@ -19,6 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          # Full history is required for the release notes generator
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -31,17 +32,17 @@ jobs:
         working-directory: ./frontend
 
       - name: Update manifest.json version
-        run: |
-          node -e "let manifest = require('./frontend/manifest.json'); manifest.version = '${{ github.ref_name }}'.substring(1); require('fs').writeFileSync('./frontend/manifest.json', JSON.stringify(manifest, null, 2));"
-          echo "frontend/manifest.json updated to version ${{ github.ref_name }}"
+        run: node .github/scripts/update-manifest.js
 
       - name: Commit and Update Tag
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add frontend/manifest.json
-          git commit -m "chore: Bump frontend version to ${{ github.ref_name }}"
           # This command updates the tag to point to the new commit
+          git commit -m "chore: Bump frontend version to ${{ github.ref_name }}"
+          # Force push is required to move the tag to the new commit,
+          # which includes the manifest.json version bump.
           git push origin --force ${{ github.ref_name }}
 
       - name: Build frontend extension
