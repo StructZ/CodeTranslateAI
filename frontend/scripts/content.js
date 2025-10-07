@@ -25,7 +25,7 @@ async function handleElementClick(e) {
   const cachedData = await getFromCache(cacheKey);
 
   if (cachedData && cachedData[lang]) {
-    injectOrUpdateTranslations(cachedData, clickedElement, originalWidth,theme);
+    injectOrUpdateTranslations(cachedData, clickedElement, originalWidth, theme, selectedCode);
     return;
   }
 
@@ -58,7 +58,7 @@ async function handleElementClick(e) {
         const newData = cachedData || {};
         newData[lang] = cleaned;
         await saveToCache(cacheKey, newData, 10);
-        injectOrUpdateTranslations(newData, clickedElement, originalWidth,theme);
+        injectOrUpdateTranslations(newData, clickedElement, originalWidth, theme, selectedCode);
       }
     }
   );

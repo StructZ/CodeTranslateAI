@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export interface Env {
 	RATE_LIMIT: KVNamespace;
 	GEMINI_API_KEY: string;
+	FEEDBACK_STORE: KVNamespace;
 }
 
 const corsHeaders = {
@@ -94,6 +95,53 @@ ${code}`;
 	});
 }
 
+async function handleFeedback(request: Request, env: Env) {
+	const feedback = await request.json<{
+		isPositive: boolean;
+		targetLanguage: string;
+		originalCode: string;
+		translatedCode: string;
+		comment?: string;
+		timestamp: string;
+	}>();
+
+	if (!feedback.targetLanguage || !feedback.originalCode || !feedback.translatedCode) {
+		return new Response(JSON.stringify({ error: "Missing required feedback fields." }), {
+			status: 400,
+			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+		});
+	}
+
+	// Generate a unique ID for the feedback
+	const feedbackId = `feedback_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+	
+	// Store feedback in KV
+	try {
+		await env.FEEDBACK_STORE.put(feedbackId, JSON.stringify(feedback), {
+			metadata: {
+				isPositive: feedback.isPositive,
+				targetLanguage: feedback.targetLanguage,
+				timestamp: feedback.timestamp
+			}
+		});
+
+		return new Response(JSON.stringify({ 
+			success: true, 
+			message: "Feedback submitted successfully",
+			feedbackId 
+		}), {
+			status: 200,
+			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+		});
+	} catch (error) {
+		console.error('Error storing feedback:', error);
+		return new Response(JSON.stringify({ error: 'Failed to store feedback.' }), {
+			status: 500,
+			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+		});
+	}
+}
+
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		if (request.method === 'OPTIONS') {
@@ -123,6 +171,10 @@ export default {
 
 			if (path === '/v1/explain') {
 				return await handleExplain(request, model);
+			}
+
+			if (path === '/v1/feedback') {
+				return await handleFeedback(request, env);
 			}
 
 			return new Response(JSON.stringify({ error: 'Route not found.' }), {

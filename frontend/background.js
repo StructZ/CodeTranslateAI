@@ -39,6 +39,39 @@ chrome.runtime.onMessage.addListener((request, _, sendResponse) => {
 
     return true;
   }
+
+  if (request.type === "SUBMIT_FEEDBACK") {
+    const BACKEND_URL = process.env.BACKEND_URL;
+    const feedbackEndpoint = `${BACKEND_URL}/v1/feedback`;
+
+    fetch(feedbackEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request.feedback),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            `Network response was not ok: ${response.statusText}`
+          );
+        }
+        return response.json();
+      })
+      .then((data) => {
+        sendResponse({ success: true, data });
+      })
+      .catch((error) => {
+        console.error("Error submitting feedback:", error);
+        sendResponse({
+          success: false,
+          error: `Failed to submit feedback: ${error.message}`,
+        });
+      });
+
+    return true;
+  }
 });
 //Default commmand = Alt+T , Mac  = Option+T
 chrome.commands.onCommand.addListener((command) => {
