@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.js",
+    "test": "vitest",
     "format": "prettier --write .",
     "check-format": "prettier --check .",
     "prepare": "husky"
@@ -17,7 +18,9 @@
     "dotenv": "^17.2.1",
     "esbuild": "^0.25.8",
     "husky": "^9.1.7",
+    "jsdom": "^27.0.0",
     "lint-staged": "^16.1.4",
-    "prettier": "3.6.2"
+    "prettier": "3.6.2",
+    "vitest": "^3.2.4"
   }
 }
