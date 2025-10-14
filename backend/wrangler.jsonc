@@ -13,7 +13,11 @@
 	"kv_namespaces": [
 		{
 			"binding": "RATE_LIMIT",
-			"id": "<your_kv_id>"
+			"id": "<your_kv_id>",
+		}
+		,{
+			"binding": "LANG_TRANSLATION_ANALYTICS",
+			"id":"<your_kv_id>"
 		}
 	]
 

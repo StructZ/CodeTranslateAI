@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface Env {
 	RATE_LIMIT: KVNamespace;
+	LANG_TRANSLATION_ANALYTICS: KVNamespace;
 	GEMINI_API_KEY: string;
 }
 
@@ -15,7 +16,7 @@ const MAX_REQUESTS_ALLOWED = 10;
 const DURATION = 60_000;
 
 async function checkRateLimit(ip: string, env: Env) {
-	const key = `ip_key:${ip}`;
+	const key = `ip_key:${ip}`.toLowerCase();
 	const now = Date.now();
 	let value = await env.RATE_LIMIT.get(key);
 	let data = { count: 0, time: now };
@@ -38,7 +39,27 @@ async function checkRateLimit(ip: string, env: Env) {
 
 	return data.count <= MAX_REQUESTS_ALLOWED;
 }
-async function handleTranslate(request: Request, model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>) {
+
+async function updateAnalytics(source: string, dest: string, env: Env) {
+	const normalizedSource = source.trim().toLowerCase();
+	const normalizedDest = dest.trim().toLowerCase();
+	const key = `${normalizedSource}-${normalizedDest}`;
+	let value = await env.LANG_TRANSLATION_ANALYTICS.get(key);
+
+	let data = { count: 0 };
+	if (value) {
+		try {
+			data = JSON.parse(value);
+		} catch {
+			data = { count: 0 };
+		}
+	}
+
+	data.count += 1; // increment usage count
+
+	await env.LANG_TRANSLATION_ANALYTICS.put(key, JSON.stringify(data));
+}
+async function handleTranslate(request: Request, model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>, env: Env) {
 	const { code, targetLanguage } = await request.json<{ code: string; targetLanguage: string }>();
 
 	if (!code || !targetLanguage) {
@@ -47,7 +68,7 @@ async function handleTranslate(request: Request, model: ReturnType<GoogleGenerat
 			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 		});
 	}
-
+	const sourceLanguage = await detectLanguage(code, model);
 	const prompt = `Translate the following code snippet to ${targetLanguage}.
 Do not add any explanation, commentary, or markdown formatting like \`\`\` around the code.
 **IMPORTANT: Preserve all original comments and their exact placement in the translated code. Do not add extra spaces in between.**
@@ -58,8 +79,8 @@ ${code}`;
 
 	const result = await model.generateContent(prompt);
 	const translatedCode = result.response.text();
-
-	return new Response(JSON.stringify({ translation: translatedCode }), {
+	await updateAnalytics(sourceLanguage, targetLanguage, env);
+	return new Response(JSON.stringify({ translation: translatedCode}), {
 		status: 200,
 		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 	});
@@ -102,23 +123,39 @@ export default {
 
 		try {
 			const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-      		const allowed = await checkRateLimit(ip, env);
-      		if (!allowed) {
-        		return new Response(JSON.stringify({ error: "Too many requests. Try again later." }), {
-          		status: 429,
-          		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        	});
-      		}
+			const allowed = await checkRateLimit(ip, env);
+			if (!allowed) {
+				return new Response(JSON.stringify({ error: 'Too many requests. Try again later.' }), {
+					status: 429,
+					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+				});
+			}
 			const url = new URL(request.url);
 			const path = url.pathname;
 			const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
 			const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+			if (path === '/v1/analytics') {
+				const list = await env.LANG_TRANSLATION_ANALYTICS.list();
+				const stats: Record<string, any> = {};
+				for (const key of list.keys) {
+					const val = await env.LANG_TRANSLATION_ANALYTICS.get(key.name);
+					try {
+						stats[key.name] = JSON.parse(val || '{}');
+					} catch (e) {
+						console.error(`Failed to parse analytics value for key "${key.name}":`, e);
+						stats[key.name] = {};
+					}
+				}
+				return new Response(JSON.stringify(stats, null, 2), {
+					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+				});
+			}
 
-			if(path==="/test-rate-limit"){
-				return new Response(JSON.stringify("Proceed !"))
+			if (path === '/test-rate-limit') {
+				return new Response(JSON.stringify('Proceed !'));
 			}
 			if (path === '/' || path === '/v1/translate') {
-				return await handleTranslate(request, model);
+				return await handleTranslate(request, model, env);
 			}
 
 			if (path === '/v1/explain') {
@@ -138,3 +175,14 @@ export default {
 		}
 	},
 };
+
+async function detectLanguage(code: string, model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>) {
+	const prompt = `Identify the programming language of the following code. 
+Only respond with the exact language name (e.g., "python", "javascript", "c++", "java", etc.) without any extra text or punctuation.
+
+Code:
+${code}`;
+
+	const result = await model.generateContent(prompt);
+	return result.response.text().trim().toLowerCase();
+}
