@@ -41,7 +41,9 @@ async function checkRateLimit(ip: string, env: Env) {
 }
 
 async function updateAnalytics(source: string, dest: string, env: Env) {
-	const key = `${source}-${dest}`;
+	const normalizedSource = source.trim().toLowerCase();
+	const normalizedDest = dest.trim().toLowerCase();
+	const key = `${normalizedSource}-${normalizedDest}`;
 	let value = await env.LANG_TRANSLATION_ANALYTICS.get(key);
 
 	let data = { count: 0 };
@@ -78,7 +80,7 @@ ${code}`;
 	const result = await model.generateContent(prompt);
 	const translatedCode = result.response.text();
 	await updateAnalytics(sourceLanguage, targetLanguage, env);
-	return new Response(JSON.stringify({ translation: translatedCode, sourceLanguage }), {
+	return new Response(JSON.stringify({ translation: translatedCode}), {
 		status: 200,
 		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 	});
@@ -137,7 +139,12 @@ export default {
 				const stats: Record<string, any> = {};
 				for (const key of list.keys) {
 					const val = await env.LANG_TRANSLATION_ANALYTICS.get(key.name);
-					stats[key.name] = JSON.parse(val || '{}');
+					try {
+						stats[key.name] = JSON.parse(val || '{}');
+					} catch (e) {
+						console.error(`Failed to parse analytics value for key "${key.name}":`, e);
+						stats[key.name] = {};
+					}
 				}
 				return new Response(JSON.stringify(stats, null, 2), {
 					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -177,5 +184,5 @@ Code:
 ${code}`;
 
 	const result = await model.generateContent(prompt);
-	return result.response.text().trim();
+	return result.response.text().trim().toLowerCase();
 }
