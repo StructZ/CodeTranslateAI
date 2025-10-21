@@ -68,19 +68,32 @@ async function handleTranslate(request: Request, model: ReturnType<GoogleGenerat
 			headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 		});
 	}
-	const sourceLanguage = await detectLanguage(code, model);
+	// const sourceLanguage = await detectLanguage(code, model);
 	const prompt = `Translate the following code snippet to ${targetLanguage}.
-Do not add any explanation, commentary, or markdown formatting like \`\`\` around the code.
-**IMPORTANT: Preserve all original comments and their exact placement in the translated code. Do not add extra spaces in between.**
-Only provide the raw, translated code itself.
+Return only in this format:
+<TranslatedLanguage>
+...translated code...
+</TranslatedLanguage>
+<SourceLanguage>
+...detected language...
+</SourceLanguage>
 
+Do not include any markdown, comments, or extra text.
 Original Code:
 ${code}`;
 
 	const result = await model.generateContent(prompt);
-	const translatedCode = result.response.text();
+	const text = result.response.text();
+
+	const translatedMatch = text.match(/<TranslatedLanguage>([\s\S]*?)<\/TranslatedLanguage>/);
+	const sourceMatch = text.match(/<SourceLanguage>([\s\S]*?)<\/SourceLanguage>/);
+
+	const translation = translatedMatch ? translatedMatch[1].trim() : "";
+	const sourceLanguage = sourceMatch ? sourceMatch[1].trim() : "";
+
 	await updateAnalytics(sourceLanguage, targetLanguage, env);
-	return new Response(JSON.stringify({ translation: translatedCode}), {
+
+	return new Response(JSON.stringify({ translation, sourceLanguage }), {
 		status: 200,
 		headers: { ...corsHeaders, 'Content-Type': 'application/json' },
 	});
@@ -176,13 +189,13 @@ export default {
 	},
 };
 
-async function detectLanguage(code: string, model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>) {
-	const prompt = `Identify the programming language of the following code. 
-Only respond with the exact language name (e.g., "python", "javascript", "c++", "java", etc.) without any extra text or punctuation.
+// async function detectLanguage(code: string, model: ReturnType<GoogleGenerativeAI['getGenerativeModel']>) {
+// 	const prompt = `Identify the programming language of the following code. 
+// Only respond with the exact language name (e.g., "python", "javascript", "c++", "java", etc.) without any extra text or punctuation.
 
-Code:
-${code}`;
+// Code:
+// ${code}`;
 
-	const result = await model.generateContent(prompt);
-	return result.response.text().trim().toLowerCase();
-}
+// 	const result = await model.generateContent(prompt);
+// 	return result.response.text().trim().toLowerCase();
+// }
