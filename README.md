@@ -213,7 +213,10 @@ The **CodeTranslateAI** icon should now appear in your Chrome toolbar\!
 
 If you encounter errors, check the live logs from your Cloudflare Worker.
 
-1.  **Navigate to your Backend Directory**.
+1.  **Navigate to Backend Directory**.
+    ```sh
+    cd ./backend
+    ```
 2.  **Run the Tail Command**:
     ```sh
     npx wrangler tail
